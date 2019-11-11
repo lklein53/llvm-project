@@ -467,3 +467,30 @@ void b(basic_string &c) {
   c; // expected-warning {{expression result unused}}
 }
 } // namespace bug_report_66
+namespace bug_report_70 {
+namespace std {
+template <class T>
+class unique_ptr {
+public:
+  explicit unique_ptr(T *t);
+  T *release();
+};
+} // namespace std
+template <class T>
+class [[gsl::Owner]] unique_ptr {
+public:
+  explicit unique_ptr(T *t);
+  T *release();
+};
+// A random class that models a private key.
+class PrivateKey {
+};
+
+PrivateKey *getPrivateKeyStd() {
+  return std::unique_ptr<PrivateKey>(new PrivateKey()).release();
+}
+PrivateKey *getPrivateKeyNonStd() {
+  return unique_ptr<PrivateKey>(new PrivateKey()).release(); // expected-warning {{returning a dangling pointer}}
+  // expected-note@-1 {{temporary was destroyed at the end of the full expression}}
+}
+} // namespace bug_report_70
