@@ -633,6 +633,16 @@ public:
     if (!Callee)
       return;
 
+    if (auto MCE = dyn_cast<CXXMemberCallExpr>(CallE)) {
+      const CXXRecordDecl *RD = MCE->getRecordDecl();
+      StringRef ClassName = RD->getName();
+      if (RD->isInStdNamespace() && ClassName.endswith("unique_ptr") &&
+          Callee->getName() == "release") {
+        // TODO: Print warning/note to suggest to not use release on std::unique_ptr
+        return;
+      }
+    }
+
     /// Special case for assignment of Pointer into Pointer: copy pset
     if (auto *OC = dyn_cast<CXXOperatorCallExpr>(CallE)) {
       if (OC->getOperator() == OO_Equal && OC->getNumArgs() == 2 &&
